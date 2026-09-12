@@ -173,7 +173,7 @@ rejection, and the answers for this app are:
 | Personal info — Phone number | Collected, not shared. Purpose: **App functionality** |
 | Personal info — Address | Collected, not shared. Purpose: **App functionality** |
 | Financial info — Payment info | **Not collected** — Razorpay handles it; the app never sees card or UPI details |
-| Photos | **Not collected from customers.** Photo access is used only by the shop owner's own account to upload product pictures |
+| Photos | **Not collected from customers.** The app requests no photo permission at all — the owner picks product pictures through Android's system photo picker, and the camera is used only by the owner to photograph pieces |
 | Location, Contacts, Messages, Files, Health | Not collected |
 | Is data encrypted in transit? | **Yes** |
 | Can users request deletion? | **Yes** — the privacy policy explains how |

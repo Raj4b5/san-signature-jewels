@@ -17,15 +17,16 @@ const MAX_IMAGES_PER_PRODUCT = 8;
 
 export type PickedImage = { uri: string; width: number; height: number };
 
-/** Ask for gallery access and let the owner pick several pieces at once. */
+/**
+ * Let the owner pick several pieces at once.
+ *
+ * Deliberately no permission request first. Android's system photo
+ * picker and iOS's PHPicker need no permission at all, and asking for
+ * one would (a) force the app to declare READ_MEDIA_IMAGES, which Play
+ * rejects for occasional-upload apps, and (b) on web, put an `await`
+ * between the tap and the file dialog, which browsers may block.
+ */
 export async function pickImages(remainingSlots: number): Promise<PickedImage[]> {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) {
-    throw new Error(
-      "Photo access is off. Turn it on in Settings so you can add pictures of your pieces.",
-    );
-  }
-
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ["images"],
     allowsMultipleSelection: true,

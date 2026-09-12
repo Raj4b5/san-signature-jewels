@@ -42,15 +42,11 @@ Deno.serve(async (req) => {
   );
 
   if (!timingSafeEqual(expected, razorpay_signature)) {
+    // Change nothing. This endpoint is unauthenticated, so a bad
+    // signature proves only that the caller is not Razorpay -- it must
+    // not be able to mark someone else's pending order as failed. The
+    // webhook remains the authority on what actually happened.
     console.warn("signature mismatch for order", razorpay_order_id);
-
-    const supabase = createClient(
-      requireEnv("SUPABASE_URL"),
-      requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
-      { auth: { persistSession: false } },
-    );
-    await supabase.rpc("mark_order_failed", { p_razorpay_order_id: razorpay_order_id });
-
     return fail("We could not verify this payment. If money was debited it will be refunded.", 400);
   }
 

@@ -10,8 +10,9 @@
     "backgroundColor": "#0B0705",
     "primaryColor": "#D4AF37",
     "description": "Handmade and designer imitation jewellery from San Signature Jewels, Hyderabad. Bridal sets, temple jewellery, chokers, earrings and everyday pieces.",
-    "assetBundlePatterns": ["**/*"],
-
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "package": "com.sansignaturejewels.shop",
       "versionCode": 1,
@@ -22,12 +23,12 @@
       },
       "permissions": [
         "android.permission.INTERNET",
-        "android.permission.CAMERA",
-        "android.permission.READ_MEDIA_IMAGES"
+        "android.permission.CAMERA"
       ],
       "blockedPermissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.READ_MEDIA_VIDEO"
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.RECORD_AUDIO"
       ],
       "predictiveBackGestureEnabled": false,
       "edgeToEdgeEnabled": true,
@@ -35,12 +36,19 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "sansignaturejewels.com" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "https",
+              "host": "sansignaturejewels.com"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
-
     "ios": {
       "bundleIdentifier": "com.sansignaturejewels.shop",
       "supportsTablet": true,
@@ -48,7 +56,6 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-
     "web": {
       "output": "static",
       "bundler": "metro",
@@ -60,7 +67,6 @@
       "display": "standalone",
       "lang": "en-IN"
     },
-
     "plugins": [
       "expo-router",
       "expo-web-browser",
@@ -77,11 +83,11 @@
         "expo-image-picker",
         {
           "photosPermission": "San Signature Jewels needs access to your photos so you can add pictures of your jewellery to the shop.",
-          "cameraPermission": "San Signature Jewels needs the camera so you can photograph a piece and list it straight away."
+          "cameraPermission": "San Signature Jewels needs the camera so you can photograph a piece and list it straight away.",
+          "microphonePermission": false
         }
       ]
     ],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

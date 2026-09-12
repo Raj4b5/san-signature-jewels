@@ -84,7 +84,7 @@ function privacyBlocks(phone: string, email: string, address: string): Block[] {
       body: [
         "You can browse the entire collection without giving us anything at all. We only ask for information when you place an order.",
         "When you order, we collect your name, mobile number, delivery address, and your email address if you choose to give one. We also store what you ordered and the amount.",
-        "We do not collect your location, contacts, or any data from other apps. The app asks for photo and camera access only for the shop owner's account, in order to upload photographs of jewellery. Customers are never asked for either.",
+        "We do not collect your location, contacts, or any data from other apps. The app asks for camera access only when the shop owner photographs a piece to list it. Choosing existing photos uses your phone's own photo picker, which shares only the pictures actually selected. Customers are never asked for any of these.",
       ],
     },
     {

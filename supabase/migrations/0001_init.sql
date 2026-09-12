@@ -185,6 +185,10 @@ as $fn$
   select 'SJ-' || to_char(now() at time zone 'Asia/Kolkata', 'YYYY') || '-' || nextval('order_seq')::text;
 $fn$;
 
+-- Only the place-order Edge Function (service role) should draw order
+-- numbers. Left callable, anyone could burn through the sequence.
+revoke all on function next_order_number() from public, anon, authenticated;
+
 -- ---------------------------------------------------------------------
 -- Customer-facing order lookup.
 -- Orders are NOT publicly readable; this is the only way a shopper can
