@@ -25,17 +25,28 @@ export const useCart = create<CartState>()(
           return { ok: false, message: "This piece is sold out." };
         }
 
+        // What can be bought right now, after pieces other shoppers are
+        // holding while they pay.
+        const available = product.available_stock ?? product.stock;
+        if (available <= 0) {
+          return {
+            ok: false,
+            message:
+              "Another shopper is completing their purchase of this piece. Please check again in a few minutes.",
+          };
+        }
+
         const lines = get().lines;
         const existing = lines.find((l) => l.productId === product.id);
         const wanted = (existing?.quantity ?? 0) + quantity;
 
-        if (wanted > product.stock) {
+        if (wanted > available) {
           return {
             ok: false,
             message:
               existing
-                ? `You already have all ${product.stock} available in your bag.`
-                : `Only ${product.stock} available.`,
+                ? `You already have all ${available} available in your bag.`
+                : `Only ${available} available right now.`,
           };
         }
 
@@ -47,6 +58,7 @@ export const useCart = create<CartState>()(
           mrp: product.mrp === null ? null : Number(product.mrp),
           image: product.images?.[0] ?? null,
           stock: product.stock,
+          available,
           quantity: wanted,
         };
 

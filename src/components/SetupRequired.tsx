@@ -12,7 +12,7 @@ const STEPS = [
   },
   {
     title: "Run the database setup",
-    body: "In the Supabase SQL Editor, paste and run each file from supabase/migrations in order: 0001, 0002, then 0003.",
+    body: "In the Supabase SQL Editor, paste and run each file from supabase/migrations in order, 0001 through 0004.",
   },
   {
     title: "Copy your keys",

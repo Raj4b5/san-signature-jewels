@@ -148,6 +148,11 @@ export default function CheckoutScreen() {
           contact: result.razorpay!.prefill.contact,
           email: result.razorpay!.prefill.email,
           phone: normalisePhone(customer.phone),
+          // The pieces are held from this moment. The payment screen uses
+          // the device's own clock from here on, so clock skew between the
+          // phone and the server cannot shorten or stretch the hold.
+          holdSeconds: String(result.hold_seconds ?? 0),
+          placedAt: String(Date.now()),
         },
       });
     } catch (e) {

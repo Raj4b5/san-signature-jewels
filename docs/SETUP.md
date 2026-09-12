@@ -19,12 +19,13 @@ step 1, and can take money after step 2.
 
 ### 1.2 Create the tables
 
-Open **SQL Editor** in the left sidebar. For each of these three files, open it from this
+Open **SQL Editor** in the left sidebar. For each of these four files, open it from this
 project, copy the whole thing, paste it in, and press **Run**. Order matters.
 
 1. `supabase/migrations/0001_init.sql` — tables, security rules, the 11 starting categories
 2. `supabase/migrations/0002_storage.sql` — the photo bucket
 3. `supabase/migrations/0003_order_functions.sql` — payment settlement
+4. `supabase/migrations/0004_checkout_holds.sql` — holds pieces while a shopper pays
 
 Each should report success. If one errors, stop and fix it before running the next.
 
@@ -163,7 +164,22 @@ Or choose UPI and use `success@razorpay`.
 Then check: **Store Manager → Orders** should show the order as **Paid**, and the piece's
 stock should have gone down by one.
 
-### 2.7 Going live
+### 2.7 Late payments
+
+The app holds a piece for 15 minutes while someone pays, and closes the payment window a
+minute before that. Very occasionally a UPI payment is approved by the bank *after* the
+window has closed.
+
+To have Razorpay refund those automatically, open **Account & Settings → Payment capture**
+in the Razorpay dashboard, choose **automatic capture**, and set late-authorised payments to
+be **refunded** rather than captured. (Razorpay renames these screens from time to time;
+look for the capture settings.)
+
+If one does get through anyway, nothing is lost: the order shows as paid with a
+**Stock conflict** warning in Store Manager, and you decide whether to make another piece or
+refund.
+
+### 2.8 Going live
 
 When KYC is approved, generate **live** keys and update `RAZORPAY_KEY_ID` and
 `RAZORPAY_KEY_SECRET` in Supabase. Create a **second** webhook for the live mode with the
@@ -228,6 +244,16 @@ public.
 The webhook is not reaching Supabase. Check the URL in Razorpay, confirm the secret
 matches exactly, and look at **Edge Functions → Logs** in Supabase. Also confirm you
 deployed `razorpay-webhook` with `--no-verify-jwt`.
+
+**A piece says "Reserved" but nobody has bought it**
+Someone started paying for it in the last 15 minutes. If they finish, it sells; if they
+don't, it becomes available again by itself within 15 minutes. **Pieces** in Store Manager
+shows how many of each are on hold.
+
+**The dashboard says an order has a stock conflict**
+A customer paid for a piece that had just sold to someone else — their payment arrived after
+their hold ran out. Their money is safe. Open the order, make another piece or refund the
+payment from Razorpay, then tap **Mark resolved**.
 
 **Changes to a product are not showing**
 Pull down to refresh. The catalogue is cached in memory for the session.

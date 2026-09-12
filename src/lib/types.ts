@@ -23,6 +23,11 @@ export type Product = {
   is_active: boolean;
   is_featured: boolean;
   discount_percent: number;
+  /**
+   * Stock minus pieces held by shoppers who are paying right now. Computed
+   * by the database; absent on write responses, so read it with a fallback.
+   */
+  available_stock?: number;
   created_at: string;
   updated_at: string;
   /** Joined in on catalogue queries. */
@@ -89,6 +94,8 @@ export type Order = {
   razorpay_payment_id: string | null;
   status: OrderStatus;
   notes: string | null;
+  /** Paid for a piece that had already gone. Needs a refund or a remake. */
+  stock_conflict: boolean;
   created_at: string;
   order_items?: OrderItem[];
 };
@@ -101,6 +108,8 @@ export type CartLine = {
   mrp: number | null;
   image: string | null;
   stock: number;
+  /** What could be bought at the last check, after other shoppers' holds. */
+  available?: number;
   quantity: number;
 };
 
@@ -122,6 +131,8 @@ export type PlaceOrderResult = {
   delivery_charge: number;
   total: number;
   payment_method: "razorpay" | "cod";
+  /** Seconds the pieces are held for payment. Null for cash on delivery. */
+  hold_seconds: number | null;
   razorpay: {
     order_id: string;
     key_id: string;
@@ -139,6 +150,7 @@ export type DashboardStats = {
   orders_total: number;
   orders_new: number;
   orders_today: number;
+  stock_conflicts: number;
   revenue_paid: number;
   revenue_month: number;
 };

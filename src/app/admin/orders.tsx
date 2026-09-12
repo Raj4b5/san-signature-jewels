@@ -27,7 +27,7 @@ import {
   Small,
   Spacer,
 } from "@/components/ui";
-import { adminFetchOrders, updateOrderStatus } from "@/lib/api";
+import { adminFetchOrders, resolveStockConflict, updateOrderStatus } from "@/lib/api";
 import { useAsync, useDebounced } from "@/lib/useAsync";
 import {
   formatDateTime,
@@ -40,6 +40,7 @@ import type { Order } from "@/lib/types";
 const FILTERS = [
   { key: "all", label: "All" },
   { key: "placed", label: "New" },
+  { key: "conflict", label: "Stock conflict" },
   { key: "confirmed", label: "Confirmed" },
   { key: "packed", label: "Packed" },
   { key: "shipped", label: "Shipped" },
@@ -84,6 +85,23 @@ export default function AdminOrdersScreen() {
     () => adminFetchOrders({ status, search: debouncedSearch, limit: 100 }),
     [status, debouncedSearch],
   );
+
+  async function resolveConflict(order: Order) {
+    setBusyId(order.id);
+    try {
+      await resolveStockConflict(order.id);
+      state.setData(
+        (state.data ?? [])
+          .map((o) => (o.id === order.id ? { ...o, stock_conflict: false } : o))
+          // On the conflict filter, a resolved order no longer belongs.
+          .filter((o) => status !== "conflict" || o.stock_conflict),
+      );
+    } catch {
+      state.refresh();
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function changeStatus(order: Order, next: string) {
     setBusyId(order.id);
@@ -162,11 +180,15 @@ export default function AdminOrdersScreen() {
         </View>
       ) : rows.length === 0 ? (
         <EmptyState
-          title={search ? "Nothing matches" : "No orders here yet"}
+          title={
+            search ? "Nothing matches" : status === "conflict" ? "No stock conflicts" : "No orders here yet"
+          }
           message={
             search
               ? "Try the full order number, or the customer's mobile."
-              : "Orders will appear the moment a customer checks out."
+              : status === "conflict"
+                ? "Nothing needs sorting out. A paid order for a piece that had already sold would show up here."
+                : "Orders will appear the moment a customer checks out."
           }
         />
       ) : (
@@ -197,6 +219,7 @@ export default function AdminOrdersScreen() {
               busy={busyId === item.id}
               onToggle={() => setExpanded(expanded === item.id ? null : item.id)}
               onStatus={(next) => changeStatus(item, next)}
+              onResolveConflict={() => resolveConflict(item)}
             />
           )}
         />
@@ -211,12 +234,14 @@ function OrderCard({
   busy,
   onToggle,
   onStatus,
+  onResolveConflict,
 }: {
   order: Order;
   expanded: boolean;
   busy: boolean;
   onToggle: () => void;
   onStatus: (next: string) => void;
+  onResolveConflict: () => void;
 }) {
   const actions = NEXT_STATUS[order.status] ?? [];
   const unpaid = order.payment_status !== "paid" && order.payment_method === "razorpay";
@@ -262,6 +287,7 @@ function OrderCard({
             }
             tone={order.payment_status === "paid" ? "emerald" : unpaid ? "danger" : "muted"}
           />
+          {order.stock_conflict && <Badge label="Stock conflict" tone="danger" />}
           <Small style={{ fontSize: 11 }}>
             {order.order_items?.length ?? 0} item
             {(order.order_items?.length ?? 0) === 1 ? "" : "s"}
@@ -271,6 +297,31 @@ function OrderCard({
 
       {expanded && (
         <>
+          {order.stock_conflict && (
+            <>
+              <Spacer size={spacing.md} />
+              <View style={styles.warning}>
+                <Text style={styles.warningText}>
+                  This customer has paid, but a piece in the order had already sold when the
+                  payment arrived. Make another piece for them, or refund the payment from your
+                  Razorpay dashboard - then mark this resolved.
+                </Text>
+                <Spacer size={spacing.sm} />
+                <Pressable
+                  disabled={busy}
+                  onPress={onResolveConflict}
+                  style={({ pressed }) => [
+                    styles.action,
+                    { alignSelf: "flex-start", borderColor: colors.danger },
+                    (pressed || busy) && { opacity: 0.6 },
+                  ]}
+                >
+                  <Text style={[styles.actionText, { color: colors.danger }]}>Mark resolved</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
+
           <Divider style={{ marginVertical: spacing.md }} />
 
           {/* ------------------------------------------------- Items */}

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -22,7 +21,7 @@ import {
   TextButton,
 } from "@/components/ui";
 import { money } from "@/lib/format";
-import { fetchSettings, refreshCartLines } from "@/lib/api";
+import { fetchSettings, refreshCartLines, releaseHolds } from "@/lib/api";
 import { cartSavings, cartSubtotal, useCart } from "@/store/cart";
 import { useAsync } from "@/lib/useAsync";
 import type { CartLine } from "@/lib/types";
@@ -47,17 +46,40 @@ export default function BagScreen() {
   useFocusEffect(
     React.useCallback(() => {
       let cancelled = false;
-      if (!hydrated || lines.length === 0) return;
+      // Read the bag as it is now. This tab stays mounted, so a value
+      // captured when the callback was created would be the bag from the
+      // first visit -- and pieces added since would be wiped on return.
+      const checked = useCart.getState().lines;
+      if (!hydrated || checked.length === 0) return;
 
       (async () => {
         setSyncing(true);
         try {
-          const fresh = await refreshCartLines(lines);
+          // Being on the bag means not paying. Let go of anything this
+          // device was holding from an unfinished payment first -- both so
+          // other shoppers can buy it, and so our own hold does not make
+          // our own pieces look reserved in the check below.
+          await releaseHolds();
+          const fresh = await refreshCartLines(checked);
           if (cancelled) return;
 
-          const changes = describeChanges(lines, fresh);
-          replaceAll(fresh);
-          setNotice(changes);
+          // Merge into the bag as it is *after* the check: the shopper may
+          // have changed a quantity or added a piece while it ran.
+          const freshById = new Map(fresh.map((f) => [f.productId, f]));
+          const gone = new Set(
+            checked.filter((c) => !freshById.has(c.productId)).map((c) => c.productId),
+          );
+          const merged = useCart.getState().lines.flatMap((current) => {
+            if (gone.has(current.productId)) return [];
+            const update = freshById.get(current.productId);
+            if (!update) return [current]; // added mid-check; verified next visit
+            return [
+              { ...update, quantity: Math.min(current.quantity, Math.max(update.stock, 0)) },
+            ];
+          });
+
+          replaceAll(merged);
+          setNotice(describeChanges(checked, fresh));
         } catch {
           // Offline: leave the saved bag exactly as it is.
         } finally {
@@ -81,6 +103,7 @@ export default function BagScreen() {
       ? 0
       : Number(settings.data?.delivery_charge ?? 0);
   const total = subtotal + deliveryCharge;
+  const hasSoldOut = lines.some((l) => l.stock <= 0);
   const awayFromFree = settings.data ? settings.data.free_delivery_above - subtotal : 0;
 
   if (lines.length === 0) {
@@ -170,8 +193,9 @@ export default function BagScreen() {
             <TextButton title="Continue shopping" onPress={() => router.push("/shop")} />
           </Row>
           <GoldButton
-            title="Proceed to checkout"
+            title={hasSoldOut ? "Remove sold-out pieces to continue" : "Proceed to checkout"}
             onPress={() => router.push("/checkout")}
+            disabled={hasSoldOut}
             icon={<Ionicons name="arrow-forward" size={16} color={colors.ink} />}
           />
         </Container>
@@ -192,6 +216,7 @@ function BagRow({
   onRemove: () => void;
 }) {
   const soldOut = line.stock <= 0;
+  const reserved = !soldOut && line.available !== undefined && line.available < line.quantity;
 
   return (
     <View style={[styles.row, soldOut && { opacity: 0.55 }]}>
@@ -235,7 +260,15 @@ function BagRow({
           </Row>
         )}
 
-        {!soldOut && line.stock <= 2 && (
+        {reserved && (
+          <Small style={{ color: colors.goldLight, fontSize: 11, marginTop: 2 }}>
+            {line.available === 0
+              ? "Reserved right now - another shopper is paying"
+              : `Only ${line.available} free right now - another shopper is paying`}
+          </Small>
+        )}
+
+        {!soldOut && !reserved && line.stock <= 2 && (
           <Small style={{ color: colors.warning, fontSize: 11, marginTop: 2 }}>
             {line.stock === 1 ? "Last piece available" : `Only ${line.stock} left`}
           </Small>
@@ -332,6 +365,19 @@ function describeChanges(before: CartLine[], after: CartLine[]): string | null {
   }
   if (reduced.length) {
     parts.push("Quantities were reduced to match what is left in stock.");
+  }
+
+  // Not a change to the bag -- a heads-up. Held pieces stay put, because
+  // the other shopper's hold may lapse in a few minutes.
+  const held = after.filter(
+    (a) => a.stock > 0 && a.available !== undefined && a.available < a.quantity,
+  );
+  if (held.length) {
+    parts.push(
+      held.length === 1
+        ? `Another shopper is paying for "${held[0].name}" right now. It stays in your bag, and you can check out if they don't finish in the next few minutes.`
+        : `Other shoppers are paying for ${held.length} of your pieces right now. They stay in your bag in case those purchases aren't completed.`,
+    );
   }
   return parts.length ? parts.join(" ") : null;
 }

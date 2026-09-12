@@ -12,6 +12,8 @@ export type RazorpayOptions = {
   order_id: string;
   prefill: { name: string; contact: string; email: string };
   theme: { color: string; backdrop_color?: string };
+  /** Seconds before Checkout closes itself. Kept inside the stock hold. */
+  timeout?: number;
 };
 
 export type RazorpaySuccess = {

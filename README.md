@@ -79,11 +79,11 @@ src/
   theme/                    colours, type, spacing — all brand tokens live here
 
 supabase/
-  migrations/               the database. Run these three files in order.
+  migrations/               the database. Run these four files in order.
   functions/                Edge Functions — the only code that touches money
 ```
 
-### Two decisions worth knowing
+### Three decisions worth knowing
 
 **Prices are never trusted from the app.** When someone checks out, the app sends only
 product IDs and quantities. The `place-order` Edge Function looks up the real prices in
@@ -95,6 +95,15 @@ checkout returns, so the customer sees a confirmed order immediately. Razorpay's
 independently confirms it server-side, which covers the customer closing the app
 mid-payment. Both call the same `mark_order_paid`, which is written so that running it
 twice decrements stock once.
+
+**One-off pieces are held while someone pays.** Most pieces here are made once. When a
+shopper starts an online payment, their pieces are set aside for 15 minutes, and anyone else
+sees them as *Reserved* until the payment completes or the hold runs out. The check and the
+hold happen in a single locked database transaction, so two people can never both reach the
+payment screen for the last piece — and the same is true for cash on delivery. Holds expire
+on their own; there is no background job that could fail and leave a piece stuck. If a
+payment ever lands after its hold ran out and the piece has meanwhile sold, the order is
+still recorded as paid and flagged on your dashboard, so you can make another or refund.
 
 ---
 

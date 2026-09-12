@@ -1,4 +1,5 @@
 import { supabase, callFunction } from "./supabase";
+import { getHoldKey } from "./holdKey";
 import type {
   Category,
   DashboardStats,
@@ -13,6 +14,12 @@ import type {
 const PRODUCT_COLUMNS =
   "id, code, name, description, category_id, mrp, price, stock, material, weight_grams, " +
   "images, tags, is_active, is_featured, discount_percent, created_at, updated_at";
+
+/**
+ * Reads add `available_stock`, a database-computed field (stock minus
+ * live checkout holds). Writes leave it out: it is not a real column.
+ */
+const PRODUCT_READ_COLUMNS = `${PRODUCT_COLUMNS}, available_stock`;
 
 // ---------------------------------------------------------------------
 // Catalogue (public)
@@ -57,7 +64,7 @@ export async function fetchProducts(query: CatalogQuery = {}): Promise<Product[]
 
   let request = supabase
     .from("products")
-    .select(`${PRODUCT_COLUMNS}, categories(name, slug)`)
+    .select(`${PRODUCT_READ_COLUMNS}, categories(name, slug)`)
     .eq("is_active", true);
 
   if (categoryId) request = request.eq("category_id", categoryId);
@@ -93,7 +100,7 @@ export async function fetchProducts(query: CatalogQuery = {}): Promise<Product[]
 export async function fetchProduct(id: string): Promise<Product | null> {
   const { data, error } = await supabase
     .from("products")
-    .select(`${PRODUCT_COLUMNS}, categories(name, slug)`)
+    .select(`${PRODUCT_READ_COLUMNS}, categories(name, slug)`)
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -104,7 +111,7 @@ export async function fetchProduct(id: string): Promise<Product | null> {
 export async function fetchRelated(product: Product, limit = 8): Promise<Product[]> {
   let request = supabase
     .from("products")
-    .select(PRODUCT_COLUMNS)
+    .select(PRODUCT_READ_COLUMNS)
     .eq("is_active", true)
     .neq("id", product.id)
     .limit(limit);
@@ -127,7 +134,7 @@ export async function refreshCartLines(lines: CartLine[]): Promise<CartLine[]> {
   if (lines.length === 0) return [];
   const { data, error } = await supabase
     .from("products")
-    .select("id, code, name, price, mrp, stock, images, is_active")
+    .select("id, code, name, price, mrp, stock, images, is_active, available_stock")
     .in("id", lines.map((l) => l.productId));
   if (error) throw error;
 
@@ -145,6 +152,9 @@ export async function refreshCartLines(lines: CartLine[]): Promise<CartLine[]> {
         mrp: p.mrp === null ? null : Number(p.mrp),
         image: p.images?.[0] ?? null,
         stock: p.stock,
+        available: p.available_stock ?? p.stock,
+        // Capped by physical stock only. A piece another shopper is paying
+        // for stays in the bag -- their hold may lapse in a few minutes.
         quantity: Math.min(line.quantity, Math.max(p.stock, 0)),
       },
     ];
@@ -161,6 +171,7 @@ export async function placeOrder(
   paymentMethod: "razorpay" | "cod",
 ): Promise<PlaceOrderResult> {
   return callFunction<PlaceOrderResult>("place-order", {
+    hold_key: await getHoldKey(),
     items: lines.map((l) => ({ product_id: l.productId, quantity: l.quantity })),
     customer: {
       name: customer.name,
@@ -188,6 +199,19 @@ export async function verifyPayment(result: {
   );
 }
 
+/**
+ * Free any pieces this device is holding for an unfinished payment, so
+ * other shoppers are not kept waiting. Holds also expire on their own, so
+ * failure here (e.g. offline) is harmless and deliberately silent.
+ */
+export async function releaseHolds(): Promise<void> {
+  try {
+    await supabase.rpc("release_holds", { p_hold_key: await getHoldKey() });
+  } catch {
+    // ignore
+  }
+}
+
 export async function lookupOrder(orderNumber: string, phone: string) {
   const { data, error } = await supabase.rpc("lookup_order", {
     p_order_number: orderNumber,
@@ -200,6 +224,7 @@ export async function lookupOrder(orderNumber: string, phone: string) {
     status: string;
     payment_status: string;
     payment_method: string;
+    stock_conflict: boolean;
     subtotal: number;
     delivery_charge: number;
     total: number;
@@ -239,7 +264,7 @@ export async function adminFetchProducts(opts: {
 
   let request = supabase
     .from("products")
-    .select(`${PRODUCT_COLUMNS}, categories(name, slug)`)
+    .select(`${PRODUCT_READ_COLUMNS}, categories(name, slug)`)
     .order("created_at", { ascending: false });
 
   if (categoryId) request = request.eq("category_id", categoryId);
@@ -381,7 +406,8 @@ export async function adminFetchOrders(opts: {
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (status && status !== "all") request = request.eq("status", status);
+  if (status === "conflict") request = request.eq("stock_conflict", true);
+  else if (status && status !== "all") request = request.eq("status", status);
   if (search && search.trim()) {
     const term = search.trim().replace(/[,()]/g, " ");
     request = request.or(
@@ -396,6 +422,12 @@ export async function adminFetchOrders(opts: {
 
 export async function updateOrderStatus(id: string, status: string): Promise<void> {
   const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+  if (error) throw error;
+}
+
+/** The owner has refunded or remade the piece: clear the warning. */
+export async function resolveStockConflict(id: string): Promise<void> {
+  const { error } = await supabase.from("orders").update({ stock_conflict: false }).eq("id", id);
   if (error) throw error;
 }
 

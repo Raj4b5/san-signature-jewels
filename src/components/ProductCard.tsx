@@ -16,13 +16,16 @@ export function ProductCard({
   width?: number;
 }) {
   const soldOut = product.stock <= 0;
+  const available = product.available_stock ?? product.stock;
+  // In stock, but every piece is held by someone paying right now.
+  const reserved = !soldOut && available <= 0;
   const hasDiscount = product.discount_percent > 0 && !!product.mrp;
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${product.name}, ${money(product.price)}${soldOut ? ", sold out" : ""}`}
+      accessibilityLabel={`${product.name}, ${money(product.price)}${soldOut ? ", sold out" : reserved ? ", reserved" : ""}`}
       style={({ pressed }) => [styles.card, !!width && { width }, pressed && { opacity: 0.88 }]}
     >
       <View style={styles.imageWrap}>
@@ -44,7 +47,7 @@ export function ProductCard({
         {/* Gentle darkening so white price text always holds up. */}
         <LinearGradient colors={gradients.fadeUp} style={styles.imageScrim} pointerEvents="none" />
 
-        {hasDiscount && !soldOut && (
+        {hasDiscount && !soldOut && !reserved && (
           <View style={styles.discountTag}>
             <Text style={styles.discountText}>{product.discount_percent}% OFF</Text>
           </View>
@@ -56,10 +59,17 @@ export function ProductCard({
           </View>
         )}
 
-        {!soldOut && product.stock <= 2 && (
+        {reserved && (
+          <View style={styles.soldOutVeil}>
+            <Text style={[styles.soldOutText, { color: colors.goldLight }]}>Reserved</Text>
+            <Text style={styles.reservedHint}>Someone is checking out</Text>
+          </View>
+        )}
+
+        {!soldOut && !reserved && available <= 2 && (
           <View style={styles.lowStock}>
             <Text style={styles.lowStockText}>
-              {product.stock === 1 ? "Last piece" : `Only ${product.stock} left`}
+              {available === 1 ? "Last piece" : `Only ${available} left`}
             </Text>
           </View>
         )}
@@ -146,6 +156,14 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: "uppercase",
     color: colors.textMuted,
+  },
+
+  reservedHint: {
+    fontFamily: fonts.body,
+    fontSize: 10,
+    letterSpacing: 0.3,
+    color: colors.textMuted,
+    marginTop: 4,
   },
 
   body: { padding: spacing.md, gap: 2 },

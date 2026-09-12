@@ -85,8 +85,11 @@ export default function ProductScreen() {
 
   const { product, related, settings } = state.data;
   const soldOut = product.stock <= 0;
+  const available = product.available_stock ?? product.stock;
+  // In stock, but held by another shopper who is paying right now.
+  const reserved = !soldOut && available <= 0;
   const hasDiscount = product.discount_percent > 0 && !!product.mrp;
-  const canAddMore = inBag < product.stock;
+  const canAddMore = inBag < available;
 
   // The gallery is square-ish on phones and capped on desktop so a
   // portrait photo does not push the buy button off the screen.
@@ -150,9 +153,11 @@ export default function ProductScreen() {
               </View>
             )}
 
-            {soldOut && (
+            {(soldOut || reserved) && (
               <View style={styles.soldOutBanner}>
-                <Text style={styles.soldOutBannerText}>Sold out</Text>
+                <Text style={[styles.soldOutBannerText, reserved && { color: colors.goldLight }]}>
+                  {soldOut ? "Sold out" : "Reserved"}
+                </Text>
               </View>
             )}
           </View>
@@ -178,13 +183,29 @@ export default function ProductScreen() {
             </Row>
             <Small style={{ fontSize: 11, marginTop: 2 }}>Inclusive of all taxes</Small>
 
-            {!soldOut && product.stock <= 3 && (
+            {!soldOut && !reserved && available <= 3 && (
               <>
                 <Spacer size={spacing.md} />
                 <Badge
-                  label={product.stock === 1 ? "Last piece" : `Only ${product.stock} left`}
+                  label={available === 1 ? "Last piece" : `Only ${available} left`}
                   tone="warning"
                 />
+              </>
+            )}
+
+            {reserved && (
+              <>
+                <Spacer size={spacing.lg} />
+                <View style={styles.reservedNote}>
+                  <Ionicons name="time-outline" size={17} color={colors.gold} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.reservedTitle}>Someone is checking out with this piece</Text>
+                    <Text style={styles.reservedBody}>
+                      We hold a piece for a few minutes while a shopper pays. If they don't finish,
+                      it will be available again shortly.
+                    </Text>
+                  </View>
+                </View>
               </>
             )}
 
@@ -262,7 +283,9 @@ export default function ProductScreen() {
 
           <Row gap={spacing.md}>
             <View style={{ flex: 1 }}>
-              <Small style={{ fontSize: 11 }}>{inBag > 0 ? `${inBag} in your bag` : "Price"}</Small>
+              <Small style={{ fontSize: 11 }}>
+                {inBag > 0 ? `${inBag} in your bag` : reserved ? "Reserved" : "Price"}
+              </Small>
               <Text style={styles.buyBarPrice}>{money(product.price)}</Text>
             </View>
 
@@ -278,6 +301,12 @@ export default function ProductScreen() {
                       `Hello, is "${product.name}" (${product.code}) available again?`,
                     )
                   }
+                />
+              ) : reserved && inBag === 0 ? (
+                <OutlineButton
+                  title="Check again"
+                  icon={<Ionicons name="refresh" size={16} color={colors.gold} />}
+                  onPress={state.reload}
                 />
               ) : inBag > 0 ? (
                 <Row gap={spacing.sm}>
@@ -422,6 +451,25 @@ const styles = StyleSheet.create({
   },
   description: { fontFamily: fonts.body, fontSize: 14.5, lineHeight: 23, color: colors.textMuted },
   specValue: { fontFamily: fonts.body, fontSize: 14, color: colors.cream, flexShrink: 1, textAlign: "right" },
+
+  reservedNote: {
+    flexDirection: "row",
+    gap: spacing.md,
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: "rgba(212,175,55,0.07)",
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  reservedTitle: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.goldLight },
+  reservedBody: {
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
 
   assurance: {
     gap: spacing.md,

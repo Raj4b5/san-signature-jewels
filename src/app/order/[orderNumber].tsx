@@ -65,6 +65,8 @@ export default function OrderScreen() {
 
   const { order, settings } = state.data;
   const cancelled = order.status === "cancelled";
+  // Paid, but a piece sold moments before the payment completed.
+  const conflict = !!order.stock_conflict && !cancelled;
   const currentStep = TIMELINE.indexOf(order.status as (typeof TIMELINE)[number]);
 
   return (
@@ -83,12 +85,14 @@ export default function OrderScreen() {
           <SectionTitle style={{ textAlign: "center", fontSize: 25 }}>
             {cancelled
               ? "This order was cancelled"
-              : justPlaced
-                ? "Thank you, your order is placed"
-                : "Your order"}
+              : conflict
+                ? "Payment received"
+                : justPlaced
+                  ? "Thank you, your order is placed"
+                  : "Your order"}
           </SectionTitle>
 
-          {justPlaced && !cancelled && (
+          {justPlaced && !cancelled && !conflict && (
             <>
               <Spacer size={spacing.sm} />
               <Small style={{ textAlign: "center", lineHeight: 21 }}>
@@ -112,6 +116,20 @@ export default function OrderScreen() {
       </View>
 
       <Container width={640} style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xl }}>
+        {conflict && (
+          <>
+            <View style={styles.conflictNote}>
+              <Ionicons name="information-circle-outline" size={18} color={colors.goldLight} />
+              <Text style={styles.conflictText}>
+                We're sorry - one of your pieces sold moments before your payment completed. Your
+                money is safe. We'll contact you on WhatsApp to either make the piece again for you
+                or refund you in full, whichever you prefer.
+              </Text>
+            </View>
+            <Spacer size={spacing.lg} />
+          </>
+        )}
+
         {/* --------------------------------------------------- Status */}
         <View style={styles.card}>
           <Row justify="space-between">
@@ -329,6 +347,24 @@ const styles = StyleSheet.create({
     color: colors.textFaint,
     marginLeft: spacing.md,
     paddingBottom: spacing.lg,
+  },
+
+  conflictNote: {
+    flexDirection: "row",
+    gap: spacing.md,
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: colors.gold,
+    backgroundColor: "rgba(212,175,55,0.08)",
+    borderRadius: radius.md,
+    padding: spacing.lg,
+  },
+  conflictText: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 13.5,
+    lineHeight: 21,
+    color: colors.cream,
   },
 
   pendingNote: {

@@ -420,6 +420,12 @@ function ProductRow({
           ) : (
             <Small style={{ fontSize: 11 }}>{product.stock} in stock</Small>
           )}
+          {product.stock > (product.available_stock ?? product.stock) && (
+            <Badge
+              label={`${product.stock - (product.available_stock ?? product.stock)} on hold`}
+              tone="gold"
+            />
+          )}
           {!product.is_active && <Badge label="Hidden" tone="muted" />}
           {product.is_featured && <Badge label="Featured" tone="gold" />}
         </Row>

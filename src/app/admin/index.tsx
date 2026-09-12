@@ -93,6 +93,28 @@ export default function AdminDashboard() {
           size="lg"
         />
 
+        {stats.stock_conflicts > 0 && (
+          <>
+            <Spacer size={spacing.md} />
+            <Pressable
+              onPress={() => router.push("/admin/orders?status=conflict")}
+              style={({ pressed }) => [
+                styles.alert,
+                { backgroundColor: colors.danger },
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <Ionicons name="warning-outline" size={18} color={colors.ink} />
+              <Text style={styles.alertText}>
+                {stats.stock_conflicts === 1
+                  ? "1 paid order is for a piece that already sold"
+                  : `${stats.stock_conflicts} paid orders are for pieces that already sold`}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.ink} />
+            </Pressable>
+          </>
+        )}
+
         {stats.orders_new > 0 && (
           <>
             <Spacer size={spacing.md} />
