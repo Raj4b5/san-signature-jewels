@@ -1,0 +1,90 @@
+{
+  "expo": {
+    "name": "San Signature Jewels",
+    "slug": "san-signature-jewels",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "sansignature",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0705",
+    "primaryColor": "#D4AF37",
+    "description": "Handmade and designer imitation jewellery from San Signature Jewels, Hyderabad. Bridal sets, temple jewellery, chokers, earrings and everyday pieces.",
+    "assetBundlePatterns": ["**/*"],
+
+    "android": {
+      "package": "com.sansignaturejewels.shop",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_VIDEO"
+      ],
+      "predictiveBackGestureEnabled": false,
+      "edgeToEdgeEnabled": true,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "sansignaturejewels.com" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+
+    "ios": {
+      "bundleIdentifier": "com.sansignaturejewels.shop",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+
+    "web": {
+      "output": "static",
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png",
+      "name": "San Signature Jewels",
+      "shortName": "San Jewels",
+      "themeColor": "#0B0705",
+      "backgroundColor": "#0B0705",
+      "display": "standalone",
+      "lang": "en-IN"
+    },
+
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0B0705",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "San Signature Jewels needs access to your photos so you can add pictures of your jewellery to the shop.",
+          "cameraPermission": "San Signature Jewels needs the camera so you can photograph a piece and list it straight away."
+        }
+      ]
+    ],
+
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

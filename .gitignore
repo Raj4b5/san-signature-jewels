@@ -1,0 +1,24 @@
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Secrets
+.env
+.env.local
+.env.*.local
+play-service-account.json
+*.keystore
+*.jks
+
+# Native build output
+/android
+/ios
+*.orig.*
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/settings.local.json
+npm-debug.*
