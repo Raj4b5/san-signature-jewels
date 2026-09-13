@@ -45,7 +45,7 @@ export function ProductCard({
         )}
 
         {/* Gentle darkening so white price text always holds up. */}
-        <LinearGradient colors={gradients.fadeUp} style={styles.imageScrim} pointerEvents="none" />
+        <LinearGradient colors={gradients.fadeUp} style={[styles.imageScrim, { pointerEvents: "none" }]} />
 
         {hasDiscount && !soldOut && !reserved && (
           <View style={styles.discountTag}>

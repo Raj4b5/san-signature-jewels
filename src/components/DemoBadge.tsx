@@ -13,7 +13,7 @@ export function DemoBadge() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View pointerEvents="none" style={[styles.wrap, { top: insets.top + 4 }]}>
+    <View style={[styles.wrap, { top: insets.top + 4, pointerEvents: "none" }]}>
       <View style={styles.pill}>
         <Text style={styles.text}>DEMO {"·"} SAMPLE DATA</Text>
       </View>
