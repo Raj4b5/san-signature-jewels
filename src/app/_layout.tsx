@@ -17,6 +17,8 @@ import { colors } from "@/theme";
 import { useAuth } from "@/store/auth";
 import { isConfigured } from "@/lib/supabase";
 import { SetupRequired } from "@/components/SetupRequired";
+import { DemoBadge } from "@/components/DemoBadge";
+import { isDemo } from "@/demo/mode";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -78,6 +80,7 @@ export default function RootLayout() {
           <Stack.Screen name="admin" />
           <Stack.Screen name="+not-found" />
         </Stack>
+        {isDemo && <DemoBadge />}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

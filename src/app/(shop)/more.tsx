@@ -220,6 +220,7 @@ export default function MoreScreen() {
         <Spacer size={spacing.xxl} />
         <Pressable
           onPress={() => router.push(isAdmin ? "/admin" : "/admin/login")}
+          accessibilityRole="button"
           style={({ pressed }) => [styles.adminLink, pressed && { opacity: 0.6 }]}
         >
           <Ionicons name="lock-closed-outline" size={14} color={colors.textFaint} />

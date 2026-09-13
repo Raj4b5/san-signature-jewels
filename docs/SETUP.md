@@ -194,8 +194,19 @@ npm run build:web
 ```
 
 This produces a `dist/` folder of plain static files. Drag that folder onto
-[app.netlify.com/drop](https://app.netlify.com/drop) and it is live in seconds. Vercel and
-Cloudflare Pages work the same way.
+[app.netlify.com/drop](https://app.netlify.com/drop) and it is live in seconds.
+Cloudflare Pages works the same way.
+
+Use **Netlify or Cloudflare Pages**. Pages such as a single product have a different address
+for every piece, and there is no file on the server for each one, so the build adds a
+`_redirects` file telling the host to serve the product page for any `/product/...`
+address. Those two hosts read that file. GitHub Pages does not, and shared product links
+would show "not found" there.
+
+**Check after every deploy** — open these two directly in a new tab:
+
+- `https://your-site/policy/privacy` — the Play Store requires this one to load
+- any product page, e.g. copy a product's address from your browser and open it fresh
 
 Point your own domain at it when you have one. Two reasons this is worth doing before the
 app is approved:

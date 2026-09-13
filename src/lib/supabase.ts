@@ -2,6 +2,7 @@ import "react-native-url-polyfill/auto";
 import { storage, isPrerendering } from "./storage";
 import { createClient } from "@supabase/supabase-js";
 import { Platform } from "react-native";
+import { DEMO_ANON_KEY, DEMO_URL, demoFetch, isDemo } from "@/demo/mode";
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -13,15 +14,21 @@ const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
  * screen explaining exactly what to do.
  */
 export const isConfigured =
-  !!url && !!anonKey && !url.includes("YOUR-PROJECT") && !anonKey.includes("YOUR-ANON");
+  isDemo ||
+  (!!url && !!anonKey && !url.includes("YOUR-PROJECT") && !anonKey.includes("YOUR-ANON"));
 
-export const SUPABASE_URL = url ?? "";
-export const SUPABASE_ANON_KEY = anonKey ?? "";
+export const SUPABASE_URL = isDemo ? DEMO_URL : url ?? "";
+export const SUPABASE_ANON_KEY = isDemo ? DEMO_ANON_KEY : anonKey ?? "";
+
+// Real requests use the global fetch. The demo build answers them from
+// its built-in sample shop instead (see src/demo).
+const appFetch: typeof fetch = demoFetch ?? ((input, init) => fetch(input, init));
 
 export const supabase = createClient(
-  isConfigured ? url! : "https://placeholder.supabase.co",
-  isConfigured ? anonKey! : "placeholder-anon-key",
+  isDemo ? DEMO_URL : isConfigured ? url! : "https://placeholder.supabase.co",
+  isDemo ? DEMO_ANON_KEY : isConfigured ? anonKey! : "placeholder-anon-key",
   {
+    global: { fetch: appFetch },
     auth: {
       // Only the shop owner ever signs in; shoppers stay anonymous.
       storage,
@@ -44,7 +51,7 @@ export async function callFunction<T>(
   payload: unknown,
   accessToken?: string,
 ): Promise<T> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
+  const response = await appFetch(`${SUPABASE_URL}/functions/v1/${name}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

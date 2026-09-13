@@ -11,6 +11,15 @@ import { useAsync } from "@/lib/useAsync";
 
 type Block = { heading: string; body: string[] };
 
+/**
+ * Pre-render both policies as real pages. Without this the website has no
+ * file at /policy/privacy and a static host returns 404 -- and that is the
+ * exact URL the Play Store listing requires to load.
+ */
+export async function generateStaticParams(): Promise<Record<string, string>[]> {
+  return [{ doc: "privacy" }, { doc: "terms" }];
+}
+
 export default function PolicyScreen() {
   const { doc } = useLocalSearchParams<{ doc: string }>();
   const router = useRouter();

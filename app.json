@@ -86,7 +86,8 @@
           "cameraPermission": "San Signature Jewels needs the camera so you can photograph a piece and list it straight away.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

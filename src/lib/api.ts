@@ -420,8 +420,17 @@ export async function adminFetchOrders(opts: {
   return (data ?? []) as Order[];
 }
 
-export async function updateOrderStatus(id: string, status: string): Promise<void> {
-  const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+export async function updateOrderStatus(
+  id: string,
+  status: string,
+  paymentMethod?: string,
+): Promise<void> {
+  const patch: Record<string, unknown> = { status };
+  // Cash on delivery is collected when the parcel is handed over. Without
+  // this, COD orders never count towards revenue on the dashboard.
+  if (status === "delivered" && paymentMethod === "cod") patch.payment_status = "paid";
+
+  const { error } = await supabase.from("orders").update(patch).eq("id", id);
   if (error) throw error;
 }
 

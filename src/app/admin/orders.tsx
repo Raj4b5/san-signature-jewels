@@ -106,9 +106,14 @@ export default function AdminOrdersScreen() {
   async function changeStatus(order: Order, next: string) {
     setBusyId(order.id);
     try {
-      await updateOrderStatus(order.id, next);
+      await updateOrderStatus(order.id, next, order.payment_method);
+      const collected = next === "delivered" && order.payment_method === "cod";
       state.setData(
-        (state.data ?? []).map((o) => (o.id === order.id ? { ...o, status: next as any } : o)),
+        (state.data ?? []).map((o) =>
+          o.id === order.id
+            ? { ...o, status: next as any, ...(collected ? { payment_status: "paid" as const } : null) }
+            : o,
+        ),
       );
     } catch {
       state.refresh();

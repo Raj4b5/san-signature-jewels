@@ -19,6 +19,31 @@ Google Play** and as a **website**.
 
 ---
 
+## See it right now — no accounts needed
+
+```bash
+npm install
+npm run demo
+```
+
+Press `w` to open it in your browser, or scan the QR code with the **Expo Go** app on your
+phone (same Wi-Fi; use `npm run demo -- --tunnel` if the phone is on another network).
+
+The demo runs on a built-in sample shop, so everything works without Supabase or Razorpay:
+browse, place a cash-on-delivery order, then open **More → Store owner sign in → Enter the
+demo Store Manager** to see that order arrive and to add a piece of your own. A green
+**DEMO** badge stays on every screen, and nothing is saved.
+
+**To share it as a link**, run `npm run build:demo` and drag the `dist-demo` folder onto
+[app.netlify.com/drop](https://app.netlify.com/drop).
+
+The demo is assembled only when you ask for it: a normal build does not contain the sample
+shop or any of its code.
+
+**What to do next, in order: [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)**
+
+---
+
 ## The three things you need
 
 The app itself is finished. It needs three accounts to come alive:
@@ -47,9 +72,11 @@ Press `w` for the browser, or scan the QR code with **Expo Go** on your phone.
 
 | Command | What it does |
 |---|---|
+| `npm run demo` | The app with a built-in sample shop — no accounts needed |
 | `npm start` | Dev server (press `w` for web, `a` for Android) |
 | `npm run web` | Dev server, browser only |
-| `npm run build:web` | Static website into `dist/` — upload anywhere |
+| `npm run build:web` | Website into `dist/`, ready for Netlify or Cloudflare Pages |
+| `npm run build:demo` | The demo as a website, into `dist-demo/` |
 | `npm run build:android` | Play Store `.aab` via EAS (builds in the cloud) |
 | `npx tsc --noEmit` | Typecheck |
 
@@ -74,6 +101,7 @@ src/
     policy/[doc].tsx        privacy policy + terms (also your Play Store policy URL)
     admin/                  Store Manager — login, dashboard, pieces, orders, settings
   components/               UI kit, brand marks, product card, Razorpay bridge
+  demo/                     the sample shop used by `npm run demo` (never in real builds)
   lib/                      Supabase client, data access, image upload, formatting
   store/                    cart, saved address, auth (persisted on device)
   theme/                    colours, type, spacing — all brand tokens live here

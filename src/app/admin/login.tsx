@@ -18,6 +18,7 @@ import {
 } from "@/components/ui";
 import { Monogram } from "@/components/Brand";
 import { useAuth } from "@/store/auth";
+import { isDemo } from "@/demo/mode";
 
 export default function AdminLoginScreen() {
   const router = useRouter();
@@ -67,6 +68,33 @@ export default function AdminLoginScreen() {
             </View>
 
             <Spacer size={spacing.xxl} />
+
+            {isDemo && (
+              <>
+                <GoldButton
+                  title="Enter the demo Store Manager"
+                  loading={busy}
+                  onPress={async () => {
+                    setBusy(true);
+                    try {
+                      // The demo backend accepts any sign-in; no real
+                      // account or password exists.
+                      await signIn("owner@demo.local", "demo");
+                      router.replace("/admin");
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : "Could not open the demo.");
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                />
+                <Spacer size={spacing.sm} />
+                <Small style={{ textAlign: "center", fontSize: 12 }}>
+                  Demo only - no password needed. The real app asks for your own login here.
+                </Small>
+                <Spacer size={spacing.xxl} />
+              </>
+            )}
 
             <Field
               label="Email"

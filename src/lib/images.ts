@@ -2,6 +2,7 @@ import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { Platform } from "react-native";
 import { supabase } from "./supabase";
+import { isDemo } from "@/demo/mode";
 
 export const BUCKET = "product-images";
 
@@ -97,6 +98,10 @@ export async function uploadImage(
 ): Promise<string> {
   onProgress?.("compressing");
   const compressedUri = await compress(image);
+
+  // The demo has nowhere to upload to; the compressed photo on this device
+  // stands in for the stored copy until the app reloads.
+  if (isDemo) return compressedUri;
 
   onProgress?.("uploading");
   const response = await fetch(compressedUri);
